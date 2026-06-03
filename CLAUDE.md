@@ -104,6 +104,5 @@ Open `http://localhost:3000`, sign in with GitHub, create an event.
 - Update the GitHub OAuth App callback to `https://<your-vercel-url>/auth/callback` (pointing to your app, not Supabase — Supabase handles the relay)
 
 ### Notes
-- The broadcaster page **must run in Chrome** (or another Chromium browser). The ElevenLabs Scribe WebSocket requires it; Firefox will fail with a 1006 close code.
 - Translation on the viewer page requires Chrome 138+ with built-in AI features enabled. Viewers on other browsers see captions without translation.
 - Keyterms are stored in `localStorage` per event UID, so they survive reloads but are browser-local.
