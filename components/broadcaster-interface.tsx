@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { LanguageSelector } from "@/components/language-selector";
 
 interface Event {
@@ -106,6 +107,10 @@ export function BroadcasterInterface({
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [keytermsInput, setKeytermsInput] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem(`keyterms:${event.uid}`) ?? "";
+  });
   const sequenceNumberRef = useRef(0);
   const supabase = getSupabaseBrowserClient();
   const broadcastChannelRef = useRef<any>(null);
@@ -117,7 +122,7 @@ export function BroadcasterInterface({
   const languageDetectorRef = useRef<LanguageDetector | null>(null);
 
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     onPartialTranscript: async (data) => {
       console.log("Partial:", { data });
       setPartialText(data.text);
@@ -336,6 +341,15 @@ export function BroadcasterInterface({
         connectOptions.language = selectedLanguage;
       }
 
+      // Add keyterms if provided
+      const keyterms = keytermsInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (keyterms.length > 0) {
+        connectOptions.keyterms = keyterms;
+      }
+
       await scribe.connect(connectOptions);
 
       setIsRecording(true);
@@ -506,6 +520,24 @@ export function BroadcasterInterface({
                 />
                 <p className="text-xs text-muted-foreground">
                   Select a specific language or use auto-detect
+                </p>
+              </div>
+            )}
+
+            {/* Keyterms */}
+            {!isRecording && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Key Terms</label>
+                <Input
+                  placeholder="e.g. Anthropic, Claude, TypeScript"
+                  value={keytermsInput}
+                  onChange={(e) => {
+                    setKeytermsInput(e.target.value);
+                    localStorage.setItem(`keyterms:${event.uid}`, e.target.value);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Comma-separated words or phrases to bias transcription accuracy
                 </p>
               </div>
             )}

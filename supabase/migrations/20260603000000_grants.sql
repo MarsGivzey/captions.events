@@ -1,0 +1,4 @@
+GRANT SELECT ON TABLE events TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE events TO authenticated;
+GRANT SELECT ON TABLE captions TO anon;
+GRANT SELECT, INSERT ON TABLE captions TO authenticated;
