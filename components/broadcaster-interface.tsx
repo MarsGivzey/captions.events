@@ -148,7 +148,7 @@ export function BroadcasterInterface({
         });
       }
     },
-    onFinalTranscript: async (data) => {
+    onCommittedTranscript: async (data) => {
       console.log("Final:", data.text);
       setPartialText("");
 

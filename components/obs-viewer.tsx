@@ -49,7 +49,8 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
   const fontSize = FONT_SIZE[size] ?? FONT_SIZE.lg;
   const textColor = TEXT_COLOR[color] ?? TEXT_COLOR.white;
   const isBottom = position !== "top";
-  const useBg = bg === "1";
+  const useSpanBg = bg === "span" || bg === "1";
+  const usePageBg = bg === "page";
 
   useEffect(() => {
     const load = async () => {
@@ -102,12 +103,12 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
     fontSize,
     fontWeight: 700,
     lineHeight: 1.35,
-    textShadow: useBg ? "none" : "0 2px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9)",
+    textShadow: useSpanBg || usePageBg ? "none" : "0 2px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9)",
     fontFamily: "system-ui, sans-serif",
   };
 
-  const spanStyle: React.CSSProperties = useBg
-    ? { backgroundColor: "rgba(0,0,0,0.85)", padding: "2px 5px", borderRadius: "2px" }
+  const spanStyle: React.CSSProperties = useSpanBg
+    ? { backgroundColor: "#000", padding: "2px 5px", borderRadius: "2px" }
     : {};
 
   const lines = [...captions.map((c) => ({ text: c.text, partial: false }))];
@@ -118,7 +119,7 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
       style={{
         position: "fixed",
         inset: 0,
-        background: "transparent",
+        background: usePageBg ? "#000" : "transparent",
         display: "flex",
         flexDirection: "column",
         justifyContent: isBottom ? "flex-end" : "flex-start",
@@ -132,7 +133,7 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
             key={i}
             style={{
               ...textStyle,
-              opacity: line.partial ? 0.65 : 1,
+              opacity: 1,
               fontStyle: line.partial ? "italic" : "normal",
             }}
           >
