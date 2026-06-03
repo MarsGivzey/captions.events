@@ -33,6 +33,16 @@ The upstream migrations create tables with RLS but don't grant permissions to th
 `commitStrategy: "vad"` is explicitly set on `scribe.connect()` so the server only processes audio when speech is detected — silence is not billed.
 - `components/broadcaster-interface.tsx`
 
+### Quota badge on broadcaster
+A green/yellow/red badge in the Broadcasting Controls card header shows remaining ElevenLabs characters (account-wide, from `/api/scribe-quota`). Polls every 120s. The number reflects ElevenLabs' server-side tally which updates with unknown latency — treat it as directional, not precise. The API key requires `user_read` permission for this to work.
+- `app/api/scribe-quota/route.ts`
+- `components/broadcaster-interface.tsx`
+
+### 1006 WebSocket error suppressed on stop
+When you click Stop, the WebSocket closes with code 1006 (unclean close) and was triggering the `onError` handler, showing a spurious "Transcription error" alert. An `isStoppingRef` flag suppresses `onError` during intentional disconnects.
+**Note:** this may be masking legitimate errors that happen to coincide with a stop — worth revisiting if errors go silently missing.
+- `components/broadcaster-interface.tsx`
+
 ### Misc
 - `next.config.mjs` — disabled Next.js dev tools indicator (`devIndicators: false`)
 - `.gitignore` — added `supabase/.temp/` (contains project connection URLs)

@@ -111,7 +111,9 @@ export function BroadcasterInterface({
     if (typeof window === "undefined") return "";
     return localStorage.getItem(`keyterms:${event.uid}`) ?? "";
   });
+  const [quota, setQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const sequenceNumberRef = useRef(0);
+  const isStoppingRef = useRef(false);
   const supabase = getSupabaseBrowserClient();
   const broadcastChannelRef = useRef<any>(null);
 
@@ -185,6 +187,7 @@ export function BroadcasterInterface({
       }
     },
     onError: (error) => {
+      if (isStoppingRef.current) return;
       console.error("Scribe error:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -364,12 +367,15 @@ export function BroadcasterInterface({
 
   const handleStopRecording = async () => {
     try {
+      isStoppingRef.current = true;
       await scribe.disconnect();
       setIsRecording(false);
       setPartialText("");
     } catch (err) {
       console.error("Error stopping recording:", err);
       setError(err instanceof Error ? err.message : "Failed to stop recording");
+    } finally {
+      isStoppingRef.current = false;
     }
   };
 
@@ -439,6 +445,19 @@ export function BroadcasterInterface({
     };
   }, [event.uid, supabase]);
 
+  // Fetch quota on mount and every 30s while recording
+  useEffect(() => {
+    const fetchQuota = async () => {
+      try {
+        const res = await fetch("/api/scribe-quota");
+        if (res.ok) setQuota(await res.json());
+      } catch {}
+    };
+    fetchQuota();
+    const interval = setInterval(fetchQuota, 120000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Event Info Card */}
@@ -502,12 +521,27 @@ export function BroadcasterInterface({
       {/* Broadcasting Interface */}
       <Card>
         <CardHeader>
-          <CardTitle>Broadcasting Controls</CardTitle>
-          <CardDescription>
-            {isRecording
-              ? "Recording audio and transcribing in real-time"
-              : "Start recording to begin live transcription"}
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Broadcasting Controls</CardTitle>
+              <CardDescription>
+                {isRecording
+                  ? "Recording audio and transcribing in real-time"
+                  : "Start recording to begin live transcription"}
+              </CardDescription>
+            </div>
+            {quota && (() => {
+              const pct = quota.remaining / quota.limit;
+              const bg = pct > 0.4 ? "bg-green-500" : pct > 0.15 ? "bg-yellow-500" : "bg-red-500";
+              const remaining = quota.remaining.toLocaleString();
+              const limit = quota.limit.toLocaleString();
+              return (
+                <span className={`${bg} text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
+                  {remaining} / {limit} chars
+                </span>
+              );
+            })()}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
