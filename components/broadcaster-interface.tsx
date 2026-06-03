@@ -339,7 +339,7 @@ export function BroadcasterInterface({
 
       // Add language if specified (otherwise auto-detect)
       if (selectedLanguage) {
-        connectOptions.language = selectedLanguage;
+        connectOptions.languageCode = selectedLanguage;
       }
 
       // Add keyterms if provided
