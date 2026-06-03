@@ -112,6 +112,7 @@ export function BroadcasterInterface({
     return localStorage.getItem(`keyterms:${event.uid}`) ?? "";
   });
   const [quota, setQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [dbUsage, setDbUsage] = useState<{ used: number; limit: number } | null>(null);
   const sequenceNumberRef = useRef(0);
   const isStoppingRef = useRef(false);
   const supabase = getSupabaseBrowserClient();
@@ -350,6 +351,10 @@ export function BroadcasterInterface({
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
+      const longKeyterm = keyterms.find((t) => t.length > 20);
+      if (longKeyterm) {
+        throw new Error(`Key term "${longKeyterm}" exceeds 20 characters. Please shorten it.`);
+      }
       if (keyterms.length > 0) {
         connectOptions.keyterms = keyterms;
       }
@@ -445,7 +450,7 @@ export function BroadcasterInterface({
     };
   }, [event.uid, supabase]);
 
-  // Fetch quota on mount and every 30s while recording
+  // Fetch quota on mount and every 120s
   useEffect(() => {
     const fetchQuota = async () => {
       try {
@@ -455,6 +460,19 @@ export function BroadcasterInterface({
     };
     fetchQuota();
     const interval = setInterval(fetchQuota, 120000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch DB disk usage on mount and every 120s
+  useEffect(() => {
+    const fetchDbUsage = async () => {
+      try {
+        const res = await fetch("/api/supabase-usage");
+        if (res.ok) setDbUsage(await res.json());
+      } catch {}
+    };
+    fetchDbUsage();
+    const interval = setInterval(fetchDbUsage, 120000);
     return () => clearInterval(interval);
   }, []);
 
@@ -530,17 +548,30 @@ export function BroadcasterInterface({
                   : "Start recording to begin live transcription"}
               </CardDescription>
             </div>
-            {quota && (() => {
-              const pct = quota.remaining / quota.limit;
-              const bg = pct > 0.4 ? "bg-green-500" : pct > 0.15 ? "bg-yellow-500" : "bg-red-500";
-              const remaining = quota.remaining.toLocaleString();
-              const limit = quota.limit.toLocaleString();
-              return (
-                <span className={`${bg} text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
-                  {remaining} / {limit} chars
-                </span>
-              );
-            })()}
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {quota && (() => {
+                const pct = quota.remaining / quota.limit;
+                const bg = pct > 0.4 ? "bg-green-500" : pct > 0.15 ? "bg-yellow-500" : "bg-red-500";
+                const remaining = quota.remaining.toLocaleString();
+                const limit = quota.limit.toLocaleString();
+                return (
+                  <span className={`${bg} text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
+                    ElevenAPI: {remaining} / {limit} remaining
+                  </span>
+                );
+              })()}
+              {dbUsage && (() => {
+                const usedMB = (dbUsage.used / 1024 / 1024).toFixed(1);
+                const limitMB = Math.round(dbUsage.limit / 1024 / 1024);
+                const pct = dbUsage.used / dbUsage.limit;
+                const bg = pct < 0.6 ? "bg-green-500" : pct < 0.85 ? "bg-yellow-500" : "bg-red-500";
+                return (
+                  <span className={`${bg} text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
+                    SupaDB {usedMB} / {limitMB} MB used
+                  </span>
+                );
+              })()}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

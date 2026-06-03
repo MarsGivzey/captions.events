@@ -38,6 +38,17 @@ A green/yellow/red badge in the Broadcasting Controls card header shows remainin
 - `app/api/scribe-quota/route.ts`
 - `components/broadcaster-interface.tsx`
 
+### DB size badge on broadcaster
+A second green/yellow/red badge next to the ElevenLabs quota badge shows Postgres database size vs the free tier limit (`25.4 / 500 MB`). Calls the Supabase Management API (`POST /v1/projects/{ref}/database/query`) to run `SELECT sum(pg_database_size(datname)) FROM pg_database` — summing all databases in the cluster matches the number Supabase shows in the dashboard (single-database queries undercount). Also fetches the org plan (`GET /v1/organizations/{org_id}`) to determine the limit dynamically (free=500MB, pro/team=8GB) — no hardcoded values. Polls every 120s. Requires `SUPABASE_ACCESS_TOKEN` (a Supabase CLI personal access token) and `SUPABASE_PROJECT_REF` in `.env.local`.
+
+Color thresholds: green < 60% used, yellow 60–85%, red > 85%.
+- `app/api/supabase-usage/route.ts`
+- `components/broadcaster-interface.tsx`
+
+### Keyterm length validation
+ElevenLabs rejects keyterms longer than 20 characters with a WebSocket 1008 error that crashes the session. Added client-side validation in `handleStartRecording` that throws a user-friendly error before connecting if any keyterm exceeds 20 characters.
+- `components/broadcaster-interface.tsx`
+
 ### 1006 WebSocket error suppressed on stop
 When you click Stop, the WebSocket closes with code 1006 (unclean close) and was triggering the `onError` handler, showing a spurious "Transcription error" alert. An `isStoppingRef` flag suppresses `onError` during intentional disconnects.
 **Note:** this may be masking legitimate errors that happen to coincide with a stop — worth revisiting if errors go silently missing.
@@ -94,6 +105,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/auth/callback
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ELEVENLABS_API_KEY=sk_...
+SUPABASE_ACCESS_TOKEN=sbp_...   # Supabase CLI personal access token
+SUPABASE_PROJECT_REF=<project-ref>
 ```
 
 ### 5. Run
