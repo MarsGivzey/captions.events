@@ -1,6 +1,6 @@
 # captions.events — Fork Notes
 
-Forked from [elevenlabs/captions.events](https://github.com/elevenlabs/captions.events). This fork adds an OBS overlay viewer route, keyterms support, and fixes a breaking API change.
+Forked from [elevenlabs/captions.events](https://github.com/elevenlabs/captions.events). This fork adds an OBS overlay viewer route, keyterms support, VAD billing optimization, and fixes a breaking API change.
 
 ---
 
@@ -17,7 +17,9 @@ A stripped-down viewer page with transparent background, large white text with d
 - `app/view-obs/layout.tsx`
 - `components/obs-viewer.tsx`
 
-Supports URL params: `?size=sm|md|lg|xl`, `?color=white|yellow|green`, `?position=bottom|top`
+Supports URL params: `?size=sm|md|lg|xl`, `?color=white|yellow|green`, `?position=bottom|top`, `?bg=1`
+
+`?bg=1` wraps each caption line in a semi-transparent black background span (padding 5px) — classic broadcast caption style. Drop shadow is disabled when bg is active.
 
 ### New: Keyterms on broadcast page
 Before starting a recording, a "Key Terms" field lets you enter comma-separated words/phrases (e.g. `Anthropic, Claude, TypeScript`) that bias ElevenLabs Scribe toward recognizing those terms. Persisted in localStorage per event so they survive page reloads.
@@ -26,6 +28,10 @@ Before starting a recording, a "Key Terms" field lets you enter comma-separated 
 ### New: Supabase grants migration
 The upstream migrations create tables with RLS but don't grant permissions to the `anon` and `authenticated` roles, which causes `permission denied` errors on fresh Supabase projects.
 - `supabase/migrations/20260603000000_grants.sql`
+
+### VAD enabled
+`commitStrategy: "vad"` is explicitly set on `scribe.connect()` so the server only processes audio when speech is detected — silence is not billed.
+- `components/broadcaster-interface.tsx`
 
 ### Misc
 - `next.config.mjs` — disabled Next.js dev tools indicator (`devIndicators: false`)

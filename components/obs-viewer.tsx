@@ -15,6 +15,7 @@ interface OBSViewerProps {
   size?: string;
   color?: string;
   position?: string;
+  bg?: string;
 }
 
 interface Caption {
@@ -39,7 +40,7 @@ const TEXT_COLOR: Record<string, string> = {
 
 const MAX_COMMITTED = 3;
 
-export function OBSViewer({ event, size = "lg", color = "white", position = "bottom" }: OBSViewerProps) {
+export function OBSViewer({ event, size = "lg", color = "white", position = "bottom", bg }: OBSViewerProps) {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [partialText, setPartialText] = useState("");
   const supabase = getSupabaseBrowserClient();
@@ -48,6 +49,7 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
   const fontSize = FONT_SIZE[size] ?? FONT_SIZE.lg;
   const textColor = TEXT_COLOR[color] ?? TEXT_COLOR.white;
   const isBottom = position !== "top";
+  const useBg = bg === "1";
 
   useEffect(() => {
     const load = async () => {
@@ -100,9 +102,13 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
     fontSize,
     fontWeight: 700,
     lineHeight: 1.35,
-    textShadow: "0 2px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9)",
+    textShadow: useBg ? "none" : "0 2px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9)",
     fontFamily: "system-ui, sans-serif",
   };
+
+  const spanStyle: React.CSSProperties = useBg
+    ? { backgroundColor: "rgba(0,0,0,0.85)", padding: "2px 5px", borderRadius: "2px" }
+    : {};
 
   const lines = [...captions.map((c) => ({ text: c.text, partial: false }))];
   if (partialText) lines.push({ text: partialText, partial: true });
@@ -130,7 +136,7 @@ export function OBSViewer({ event, size = "lg", color = "white", position = "bot
               fontStyle: line.partial ? "italic" : "normal",
             }}
           >
-            {line.text}
+            <span style={spanStyle}>{line.text}</span>
           </div>
         ))}
         <div ref={bottomRef} />

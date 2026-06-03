@@ -334,6 +334,7 @@ export function BroadcasterInterface({
       const connectOptions: any = {
         token,
         microphone: microphoneOptions,
+        commitStrategy: "vad",
       };
 
       // Add language if specified (otherwise auto-detect)
